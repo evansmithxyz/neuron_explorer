@@ -1,0 +1,9 @@
+.venv/
+node_modules/
+__pycache__/
+*.pyc
+
+# generated: full model copies, and the neuron lookup (rebuild from corpus.txt in the UI)
+exports/
+lookup.npz
+lookup.json

@@ -1,0 +1,897 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neuron Explorer</title>
+<style>
+:root{
+  --bg:#0b0e14; --panel:#121723; --panel2:#182030; --line:#263043; --text:#dbe2ee; --dim:#8492a8;
+  --pos:#ffa032; --neg:#4696ff; --accent:#7cc4ff; --ok:#5fd39a; --bad:#ff6b6b;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:13px/1.45 system-ui,Segoe UI,sans-serif;display:flex;flex-direction:column}
+header{display:flex;align-items:baseline;gap:14px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:15px;margin:0;font-weight:650}
+header .meta{color:var(--dim);font-size:12px}
+main{flex:1;display:grid;grid-template-columns:300px minmax(0,1fr) 360px;min-height:0}
+section{overflow:auto;padding:12px}
+.left,.right{background:var(--panel)}
+.left{border-right:1px solid var(--line)} .right{border-left:1px solid var(--line)}
+h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin:14px 0 6px;font-weight:600}
+h2:first-child{margin-top:0}
+label{display:block;color:var(--dim);font-size:12px;margin:8px 0 3px}
+textarea,input[type=text],input[type=number],select{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:5px;padding:6px 8px;font:inherit}
+textarea{resize:vertical;min-height:64px}
+textarea:focus,input:focus,select:focus{outline:1px solid var(--accent);border-color:var(--accent)}
+button{background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:5px;padding:5px 10px;font:inherit;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:#1d5fa8;border-color:#2b78cc;font-weight:600}
+button:disabled{opacity:.5;cursor:default}
+button.small{padding:2px 7px;font-size:12px}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.row>*{flex:1} .row>.fit{flex:0 0 auto}
+.check{display:flex;gap:6px;align-items:center;color:var(--text);margin:6px 0}
+.check input{margin:0}
+.hint{color:var(--dim);font-size:12px}
+.seg{display:inline-flex;flex-wrap:wrap;max-width:100%;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.seg button{border:0;border-radius:0;background:transparent;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:#1d5fa8}
+#tokens{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px;max-height:150px;overflow:auto;font:12.5px/1.9 ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+.tok{cursor:pointer;border-radius:3px;padding:1px 0;border-bottom:2px solid transparent}
+.tok.p{color:var(--dim)} .tok:hover{background:#26334a} .tok.sel{background:#1d5fa8;color:#fff}
+.tok.gen{border-bottom-color:#2f3d57}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.toolbar .sp{flex:1}
+#net{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px}
+.tile .cap{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-bottom:3px}
+.tile .cap b{color:var(--text);font-weight:600}
+.heads{display:grid;gap:1px;margin-bottom:4px}
+.heads i{display:block;height:9px;border-radius:1px;cursor:pointer;background:#141a26}
+.heads i:hover,.heads i.sel{outline:1px solid #fff}
+.heads i.ed{outline:1px solid var(--ok)}
+.cv{position:relative;line-height:0}
+.cv canvas{width:100%;aspect-ratio:1;image-rendering:pixelated;cursor:crosshair;border-radius:2px;background:#0b0e14}
+.mark{position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border:1.5px solid #fff;border-radius:50%;pointer-events:none}
+.mark.ed{border-color:var(--ok);border-radius:1px}
+#tip{position:fixed;pointer-events:none;background:#000d;border:1px solid var(--line);padding:3px 7px;border-radius:4px;font-size:12px;display:none;z-index:9;white-space:nowrap}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:-12px -12px 10px;padding:6px 8px 0;position:sticky;top:-12px;background:var(--panel);z-index:2}
+.tabs button{border:0;border-radius:5px 5px 0 0;background:transparent;color:var(--dim);padding:6px 9px}
+.tabs button.on{background:var(--bg);color:var(--text)}
+.pane{display:none} .pane.on{display:block}
+table{width:100%;border-collapse:collapse;font-size:12px}
+td,th{padding:3px 5px;text-align:left;border-bottom:1px solid #1b2333}
+th{color:var(--dim);font-weight:500}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+tr.click{cursor:pointer} tr.click:hover{background:var(--panel2)}
+.bar{height:6px;border-radius:3px;min-width:1px}
+.mono{font-family:ui-monospace,Consolas,monospace}
+.chip{display:inline-block;background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:0 5px;margin:2px 3px 2px 0;font:12px ui-monospace,Consolas,monospace;white-space:pre}
+.acts{font:12px/1.9 ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-word;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px;max-height:170px;overflow:auto}
+.answer{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px;white-space:pre-wrap;margin-top:6px}
+.answer small{display:block;color:var(--dim);margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em;font-size:10.5px}
+.convo{max-height:180px;overflow:auto;color:var(--dim)}
+.convo .msg{margin-bottom:5px} .convo .msg b{color:var(--text);font-weight:600}
+.edit{display:grid;grid-template-columns:auto 1fr 62px auto;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid #1b2333}
+.edit input[type=number]{padding:2px 4px}
+.legend{display:flex;align-items:center;gap:6px;color:var(--dim);font-size:12px}
+.legend span.g{width:110px;height:8px;border-radius:4px;background:linear-gradient(90deg,var(--neg),#0b0e14,var(--pos))}
+#status{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#000e;border:1px solid var(--line);padding:8px 14px;border-radius:6px;display:none;z-index:10;max-width:70vw}
+#status.err{border-color:var(--bad);color:#ffc9c9}
+.lbar{display:flex;align-items:flex-end;gap:2px;height:60px;margin:6px 0}
+.lbar i{flex:1;background:#2b78cc;border-radius:2px 2px 0 0;cursor:pointer;min-height:2px}
+.lbar i.sel{background:var(--pos)} .lbar i:hover{background:var(--accent)}
+#zoom{position:fixed;left:0;top:0;bottom:0;right:360px;background:#05070bf5;z-index:8;display:none}
+.zpanel{display:flex;flex-direction:column;gap:8px;height:100%;padding:12px;align-items:center}
+.zhead{display:flex;gap:10px;align-items:center;width:100%}
+.zhead b{font-size:15px;min-width:170px;text-align:center}
+.zbody{width:min(100%,calc(100vh - 118px));display:flex;flex-direction:column;gap:6px}
+#zHeads i{height:18px;border-radius:2px}
+#zWrap canvas{cursor:crosshair}
+#zHover{position:absolute;border:1.5px solid #fff;pointer-events:none;display:none;box-shadow:0 0 0 1px #000}
+.tile .cap button{padding:0 5px;font-size:12px;line-height:1.3}
+.ll{pointer-events:auto;cursor:pointer;padding:2px 4px} .ll:hover{color:#fff}
+@media (max-width:1100px){#zoom{right:0}}
+#map3d{position:relative;height:max(460px,calc(100vh - 300px));border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#04060a}
+#map3d canvas{display:block;cursor:grab} #map3d canvas:active{cursor:grabbing}
+.labels3d{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.labels3d>div{position:absolute;left:0;top:0;white-space:nowrap;will-change:transform}
+.ll{font-size:10px;color:#5d6c82} .ll.full{color:#b08be0}
+.nl{font-size:11px;background:#000a;border:1px solid #ffffff22;border-radius:4px;padding:0 5px;pointer-events:auto;cursor:pointer;line-height:1.5}
+.nl b{font:600 12px ui-monospace,Consolas,monospace;color:#ffd9a0;margin-right:5px;white-space:pre}
+.nl span{color:#8fa0b8;font-size:10px}
+.nl.out{border-color:#5fd39a;cursor:default} .nl.out b{color:#9ff5c9;font-size:14px}
+.nl.embed{cursor:default} .nl.embed b{color:#cfd3ff} .nl.head b{color:#d9b3ff}
+.map-help{position:absolute;left:10px;bottom:8px;color:#5d6c82;font-size:11px;pointer-events:none}
+.map-btns{position:absolute;right:8px;top:8px;display:flex;gap:6px;z-index:1}
+.tok.src{border-bottom-color:#c58bff}
+.diff-add{background:#5a3a10;border-radius:2px}
+.diff-del{background:#16345c;border-radius:2px;text-decoration:line-through;text-decoration-color:#7cc4ff}
+.think{color:var(--dim);font-style:italic;max-height:110px;overflow:auto;border-left:2px solid var(--line);padding-left:6px;margin-bottom:6px}
+.ex{font:12px/1.8 ui-monospace,Consolas,monospace;white-space:pre-wrap;word-break:break-word;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 6px;margin-bottom:4px}
+.ex .pk{outline:1px solid #fff;border-radius:2px}
+#zOver{position:absolute;left:0;top:0;background:transparent;pointer-events:none}
+#zBox{position:absolute;border:1.5px dashed #5fd39a;background:#5fd39a22;pointer-events:none;display:none}
+#zSel{display:none;gap:8px;align-items:center;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px;flex-wrap:wrap}
+#zSel input[type=text]{width:130px} #zSel input[type=number]{width:64px}
+.nl.word{border-color:#c58bff88} .nl.word b{color:#e6ccff}
+.thumb{max-width:64px;max-height:44px;border-radius:4px;border:1px solid var(--line);vertical-align:middle}
+.box{border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:8px}
+.sweep-row{display:grid;grid-template-columns:44px 1fr;gap:6px;padding:4px 0;border-bottom:1px solid #1b2333;cursor:pointer}
+.sweep-row.on{background:var(--panel2)} .sweep-row b{color:var(--pos)}
+button.rec{border-color:var(--bad);color:#ffc9c9}
+@media (max-width:1100px){main{grid-template-columns:minmax(0,1fr);overflow:auto}section{overflow:visible}.tabs{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<header><h1>Neuron Explorer</h1><span class="meta" id="meta">loading model info…</span></header>
+<main>
+<section class="left">
+  <h2>Ask the model</h2>
+  <label for="prompt">Prompt</label>
+  <textarea id="prompt" rows="4">Tell me about your weekend plans.</textarea>
+  <label for="system">System prompt (optional)</label>
+  <textarea id="system" rows="2"></textarea>
+  <div class="row">
+    <div><label for="maxnew">Answer length (tokens)</label><input id="maxnew" type="number" min="0" max="600" value="48"></div>
+  </div>
+  <label class="check"><input type="checkbox" id="useEdits" checked> Apply my edits</label>
+  <label class="check"><input type="checkbox" id="alsoBase" checked> Also show the unedited answer</label>
+  <label class="check" title="The model reasons privately inside a <think> block before answering. Needs a longer answer length (200+)."><input type="checkbox" id="thinking"> Let the model think first</label>
+  <label class="check" title="New chats only. The model is told it can call two pretend tools: get_weather and calculator. Nothing is really run — you type the tool's result yourself."><input type="checkbox" id="tools"> Offer pretend tools (weather, calculator)</label>
+  <label class="check" id="asToolRow" style="display:none" title="The model's last message was a tool call. Send what you type as that tool's result instead of as a user message."><input type="checkbox" id="asTool"> Send my prompt as the tool's result</label>
+  <div class="row" style="margin-top:4px">
+    <button class="small fit" id="imgBtn" title="Attach a picture to your prompt. It is shrunk to 448 px, about 200 tokens.">🖼 Attach picture</button>
+    <span id="imgInfo" class="hint"></span>
+    <input type="file" id="imgFile" accept="image/*" style="display:none">
+  </div>
+  <div class="row" style="margin-top:6px">
+    <button class="primary" id="runBtn" title="Start a fresh conversation with this prompt (Ctrl+Enter)">Run (new chat)</button>
+    <button id="contBtn" disabled title="Send this prompt as the next turn of the conversation shown below (Shift+Enter)">Continue chat ↩</button>
+  </div>
+  <div class="hint" id="chatHint" style="margin-top:4px">Run starts fresh. Continue chat sends your prompt as the next turn, so the model sees everything said so far.</div>
+  <div id="answers"></div>
+
+  <h2>Earlier runs</h2>
+  <select id="runSel"><option value="">—</option></select>
+
+  <h2>My edits</h2>
+  <div id="edits"><div class="hint">None yet. Click a neuron or head in the map, then ablate or boost it — or build a steering vector in the Steering tab.</div></div>
+  <div class="row" style="margin-top:8px">
+    <button id="clearEdits" class="fit small">Clear all</button>
+  </div>
+  <label for="presetSel">Presets (saved sets of edits)</label>
+  <div class="row"><select id="presetSel"></select><button id="presetLoad" class="fit small" title="Replace my edits with this preset">Load</button><button id="presetDel" class="fit small" title="Delete this preset">✕</button></div>
+  <div class="row" style="margin-top:4px"><input type="text" id="presetName" placeholder="name, e.g. pirate"><button id="presetSave" class="fit small" title="Save my current edits under this name">Save as</button></div>
+
+  <h2>Save edited model</h2>
+  <div class="row"><input type="text" id="exportName" placeholder="my-edited-qwen"><button id="exportBtn" class="fit">Save</button></div>
+  <div class="hint" style="margin-top:4px">Writes a full copy (~9 GB) into <span class="mono">exports/</span> with neuron and head edits baked into the weights.</div>
+</section>
+
+<section class="center">
+  <div id="tokens"><span class="hint">Run a prompt to see its tokens here. Click any token to see what fired while the model was reading or writing it.</span></div>
+  <div class="toolbar">
+    <div class="seg" id="scopeSeg">
+      <button data-scope="gen" class="on" title="Average over the tokens of the answer">Whole answer</button>
+      <button data-scope="all" title="Average over every token, prompt included">All tokens</button>
+    </div>
+    <button id="playBtn" class="small" title="Step through the answer token by token">▶ Play</button>
+    <div class="seg" id="modeSeg">
+      <button data-mode="act" class="on" title="How strongly each neuron fired">Activation</button>
+      <button data-mode="attr" title="How much each neuron directly pushed the model toward the token it actually wrote next">Push toward output</button>
+      <button data-mode="effect" title="What my edits changed inside the network: this run's activations minus the unedited model reading the very same words">Edit effect</button>
+      <button data-mode="diff" title="Difference between the two sides of a steering contrast (A minus B)">Contrast A−B</button>
+    </div>
+    <span class="sp"></span>
+    <span class="legend">−<span class="g"></span>+</span>
+    <label style="margin:0;display:flex;align-items:center;gap:6px">Gain <input type="range" id="gain" min="0.25" max="6" step="0.05" value="1" style="width:90px"></label>
+  </div>
+  <div class="row" style="margin-bottom:8px;align-items:flex-start">
+    <div class="seg fit" id="viewSeg">
+      <button data-view="3d" class="on" title="The whole network in 3D with traced pathways">3D map</button>
+      <button data-view="grid" title="Flat squares, one per layer">Grid</button>
+    </div>
+    <div class="hint" id="viewHint"></div>
+  </div>
+  <div id="map3d">
+    <div class="map-btns">
+      <button class="small" id="shotBtn" title="Save a picture of the map as it looks now">📷 Picture</button>
+      <button class="small" id="recBtn" title="Record a video of the map (press Play to capture the answer being written), press again to stop and save">⏺ Record</button>
+      <button class="small" id="resetView">Reset view</button>
+    </div>
+    <div class="map-help">drag to rotate · scroll to zoom · right-drag to pan · click a neuron, head or label to inspect it · click a layer number to enlarge that layer</div>
+  </div>
+  <div id="net" style="display:none"></div>
+</section>
+
+<section class="right">
+  <div class="tabs" id="tabs">
+    <button data-tab="top" class="on">Top neurons</button>
+    <button data-tab="detail">Selected</button>
+    <button data-tab="lens">Layers</button>
+    <button data-tab="steer">Steering</button>
+    <button data-tab="tests">Tests</button>
+  </div>
+  <div class="pane on" id="pane-top"><div class="hint">Run a prompt first.</div></div>
+  <div class="pane" id="pane-detail"><div class="hint">Click a neuron (a pixel in a layer's square) or a head (a cell in the strip above it).</div></div>
+  <div class="pane" id="pane-lens"><div class="hint">Click a token to see what the model would have said next if it had stopped after each layer.</div></div>
+  <div class="pane" id="pane-steer">
+    <div class="hint">Find what separates two personalities. Every prompt is answered twice — once under each system prompt — and the difference is turned into a steering vector plus a neuron map.</div>
+    <label for="cName">Name</label><input type="text" id="cName" value="playful">
+    <label for="cA">System prompt A (push toward)</label>
+    <textarea id="cA" rows="2">You are playful, warm and enthusiastic. You joke around and use lively language.</textarea>
+    <label for="cB">System prompt B (push away from)</label>
+    <textarea id="cB" rows="2">You are dry, formal and terse. You never joke and you keep answers clinical.</textarea>
+    <label for="cPrompts">Prompts, one per line (more = cleaner vector, slower)</label>
+    <textarea id="cPrompts" rows="5">Tell me about the ocean.
+How do I make a cup of tea?
+What should I do this weekend?
+Explain what a neural network is.
+Give me feedback on my idea to start a bakery.
+Why is the sky blue?</textarea>
+    <div class="row"><div><label for="cLen">Tokens per answer</label><input type="number" id="cLen" value="32" min="4" max="200"></div>
+    <button class="primary fit" id="cBtn" style="align-self:flex-end">Compute</button></div>
+    <h2>Steering vectors</h2>
+    <div id="vectors"><div class="hint">None yet.</div></div>
+    <div id="cSamples"></div>
+  </div>
+  <div class="pane" id="pane-tests">
+    <div class="hint">Check that your edits do what you want without breaking other answers. Every prompt below is answered by the unedited model and by the model with your enabled edits, and the words that changed are highlighted.</div>
+    <label for="suitePrompts">Test prompts, one per line</label>
+    <textarea id="suitePrompts" rows="7"></textarea>
+    <div class="row"><div><label for="suiteLen">Tokens per answer</label><input type="number" id="suiteLen" value="40" min="4" max="300"></div>
+    <button class="fit" id="suiteSave" style="align-self:flex-end">Save list</button>
+    <button class="primary fit" id="suiteRun" style="align-self:flex-end">Run tests</button></div>
+    <div id="suiteOut" style="margin-top:10px"></div>
+  </div>
+</section>
+</main>
+<div id="zoom"><div class="zpanel">
+  <div class="zhead">
+    <button id="zPrev" title="Previous layer (←)">◀</button><b id="zTitle"></b><button id="zNext" title="Next layer (→)">▶</button>
+    <span class="hint" style="flex:1">Click a neuron or a head to select it — its details open on the right. ← → change layer, Esc closes.</span>
+    <button id="zArea" title="Drag a box over the square to edit all the neurons inside it together">▭ Select an area</button>
+    <button id="zClose">✕ Close</button>
+  </div>
+  <div id="zSel">
+    <b id="zSelN"></b>
+    <label class="check" style="margin:0" title="Keep only the neurons in the box that are visibly lit in the current view"><input type="checkbox" id="zLit" checked> only the lit ones</label>
+    <span class="hint">name</span><input type="text" id="zName" placeholder="group name">
+    <span class="hint">multiply by</span><input type="number" id="zVal" step="0.25" value="0">
+    <button class="primary" id="zMake">Make group edit</button><button id="zCancel">Cancel</button>
+  </div>
+  <div class="zbody">
+    <div class="heads" id="zHeads" style="grid-template-columns:repeat(16,1fr)"></div>
+    <div class="cv" id="zWrap"><canvas id="zCanvas" width="96" height="96"></canvas><canvas id="zOver" width="96" height="96"></canvas><div id="zHover"></div><div id="zBox"></div></div>
+  </div>
+</div></div>
+<div id="tip"></div>
+<div id="status"></div>
+
+<script type="importmap">{"imports":{"three":"/vendor/three/build/three.module.js","three/addons/":"/vendor/three/examples/jsm/"}}</script>
+<script>
+const $ = s => document.querySelector(s);
+const el = (tag, props = {}, ...kids) => { const e = Object.assign(document.createElement(tag), props); for (const k of kids) e.append(k); return e; };
+const S = { zoom: null, view: '3d', graph: null, map3d: null, scales: null, info: null, run: null, scope: 'gen', mode: 'act', vec: null, map: null, gain: 1, sel: null, edits: [], vectors: [], playing: null, steerLayer: {}, req: 0, img: null, lookup: null, presets: [], sweeps: {}, areaMode: false, drag: null, area: null, tokSpans: [], suiteBase: {} };
+const IMG_TOK = '<|image_pad|>';
+const G = 96; // neurons per side of a layer square (96*96 = 9216)
+
+/* ---------- plumbing ---------- */
+let statusTimer;
+function status(msg, err = false, sticky = false) {
+  const s = $('#status'); s.textContent = msg; s.className = err ? 'err' : ''; s.style.display = msg ? 'block' : 'none';
+  clearTimeout(statusTimer); if (msg && !sticky) statusTimer = setTimeout(() => s.style.display = 'none', err ? 7000 : 2500);
+}
+async function api(path, opts = {}, binary = false) {
+  if (opts.body && typeof opts.body !== 'string') { opts.body = JSON.stringify(opts.body); opts.headers = { 'Content-Type': 'application/json' }; }
+  const r = await fetch(path, opts);
+  if (!r.ok) { let m = r.statusText; try { const j = await r.json(); m = typeof j.detail === 'string' ? j.detail : JSON.stringify(j.detail); } catch {} throw new Error(m); }
+  return binary ? new Float32Array(await r.arrayBuffer()) : r.json();
+}
+const guard = fn => async (...a) => { try { return await fn(...a); } catch (e) { console.error(e); status(e.message, true); } };
+const fmt = v => Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(2);
+const showTok = t => t.replace(/\n/g, '↵\n');
+function color(t) { // t in [-1,1] -> rgb
+  const a = Math.pow(Math.min(1, Math.abs(t)), 0.6), c = t >= 0 ? [255, 160, 50] : [70, 150, 255], w = Math.max(0, a - 0.8) * 2.5;
+  return [11 + (c[0] - 11) * a + (255 - c[0]) * w * a, 14 + (c[1] - 14) * a + (255 - c[1]) * w * a, 20 + (c[2] - 20) * a + (255 - c[2]) * w * a];
+}
+const css = t => { const c = color(t); return `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`; };
+
+/* ---------- network map ---------- */
+function buildNet() {
+  const net = $('#net'); net.textContent = '';
+  S.tiles = S.info.layer_types.map((type, l) => {
+    const nh = S.info.heads[l];
+    const heads = el('div', { className: 'heads' }); heads.style.gridTemplateColumns = `repeat(16,1fr)`;
+    const cells = [];
+    for (let h = 0; h < nh; h++) { const c = el('i'); c.onclick = () => select({ kind: 'head', layer: l, index: h }); c.onmousemove = e => tip(e, `L${l} head ${h}` + (c.dataset.v ? ` · ${c.dataset.v}` : '')); c.onmouseleave = () => tip(); cells.push(c); heads.append(c); }
+    const cv = el('canvas', { width: G, height: G });
+    const wrap = el('div', { className: 'cv' }, cv);
+    cv.onmousemove = e => { const i = pix(cv, e); tip(e, `L${l} neuron ${i}` + (S.map ? ` · ${fmt(S.map[l * S.info.d_mlp + i])}` : '')); };
+    cv.onmouseleave = () => tip();
+    cv.onclick = e => select({ kind: 'neuron', layer: l, index: pix(cv, e) });
+    cv.ondblclick = () => openZoom(l);
+    const tile = el('div', { className: 'tile' }, el('div', { className: 'cap' }, el('b', { textContent: 'Layer ' + l }), el('button', { textContent: '⤢', title: 'Enlarge this layer', onclick: () => openZoom(l) }), el('span', { textContent: type === 'full_attention' ? 'attention' : 'delta-net', title: type === 'full_attention' ? 'Standard self-attention layer (16 heads)' : 'Gated delta-net (linear attention) layer (32 heads)' })), heads, wrap);
+    net.append(tile);
+    return { cv, ctx: cv.getContext('2d'), cells, wrap };
+  });
+}
+/* ---------- enlarged single layer ---------- */
+function openZoom(l) { l = Math.max(0, Math.min(S.info.n_layers - 1, l)); if (l !== S.zoom) clearArea(); S.zoom = l; $('#zoom').style.display = 'block'; drawZoom(); drawMarks(); }
+function closeZoom() { S.zoom = null; $('#zoom').style.display = 'none'; setAreaMode(false); tip(); }
+/* drag a box over the enlarged layer to edit many neurons as one group */
+function setAreaMode(on) { S.areaMode = on; $('#zArea').classList.toggle('primary', on); $('#zArea').textContent = on ? '▭ Drag a box…' : '▭ Select an area'; if (!on) clearArea(); }
+function clearArea() { S.area = S.drag = null; $('#zBox').style.display = 'none'; $('#zSel').style.display = 'none'; }
+function showBox(a) { const b = $('#zBox'), x0 = Math.min(a.x0, a.x1), y0 = Math.min(a.y0, a.y1), w = Math.abs(a.x1 - a.x0) + 1, h = Math.abs(a.y1 - a.y0) + 1; b.style.display = 'block'; b.style.left = x0 / G * 100 + '%'; b.style.top = y0 / G * 100 + '%'; b.style.width = w / G * 100 + '%'; b.style.height = h / G * 100 + '%'; }
+function areaMembers() {
+  const a = S.area, out = []; if (!a) return out;
+  const N = S.info.d_mlp, lit = $('#zLit').checked && S.map, sc = lit ? S.scales[a.l] / S.gain : 1;
+  for (let y = Math.min(a.y0, a.y1); y <= Math.max(a.y0, a.y1); y++) for (let x = Math.min(a.x0, a.x1); x <= Math.max(a.x0, a.x1); x++) {
+    const i = y * G + x; if (i >= N) continue;
+    if (!lit || Math.abs(S.map[a.l * N + i]) / sc > 0.15) out.push([a.l, i]);
+  }
+  return out;
+}
+function showAreaBar() { const n = areaMembers().length; $('#zSel').style.display = 'flex'; $('#zSelN').textContent = `${n.toLocaleString()} neuron${n === 1 ? '' : 's'} in layer ${S.area.l}`; $('#zMake').disabled = !n; if (!$('#zName').value) $('#zName').value = `L${S.area.l}-area`; }
+function drawZoomOver() { // tint neurons that belong to an enabled group edit
+  const ctx = $('#zOver').getContext('2d'); ctx.clearRect(0, 0, G, G); if (S.zoom == null) return;
+  ctx.fillStyle = 'rgba(95,211,154,0.45)';
+  for (const e of S.edits) if (e.kind === 'group' && e.enabled) for (const [l, i] of e.members) if (l === S.zoom) ctx.fillRect(i % G, Math.floor(i / G), 1, 1);
+}
+function drawZoom() {
+  if (S.zoom == null) return;
+  const l = S.zoom, N = S.info.d_mlp, full = S.info.layer_types[l] === 'full_attention';
+  $('#zTitle').textContent = `Layer ${l} · ${full ? 'attention' : 'delta-net'}`;
+  const ctx = $('#zCanvas').getContext('2d'), img = ctx.createImageData(G, G);
+  for (let i = 0; i < N; i++) { const c = S.map ? color(S.map[l * N + i] / (S.scales[l] / S.gain)) : [11, 14, 20]; img.data[i * 4] = c[0]; img.data[i * 4 + 1] = c[1]; img.data[i * 4 + 2] = c[2]; img.data[i * 4 + 3] = 255; }
+  ctx.putImageData(img, 0, 0);
+  const hb = $('#zHeads'), hv = headValues(), v = hv && hv[l], mx = v ? Math.max(...v.map(Math.abs), 1e-9) : 1; hb.textContent = '';
+  for (let h = 0; h < S.info.heads[l]; h++) {
+    const c = el('i', { title: `Head ${h}` + (v ? ` · ${fmt(v[h])}` : '') }); if (v) c.style.background = css(v[h] / mx * Math.min(1, S.gain));
+    c.className = (S.sel && S.sel.kind === 'head' && S.sel.layer === l && S.sel.index === h ? 'sel ' : '') + (S.edits.some(e => e.kind === 'head' && e.layer === l && e.index === h && e.enabled) ? 'ed' : '');
+    c.onclick = () => select({ kind: 'head', layer: l, index: h }); hb.append(c);
+  }
+  drawZoomOver();
+}
+{
+  const cv = $('#zCanvas'), hov = $('#zHover');
+  cv.onmousemove = e => { const i = pix(cv, e), l = S.zoom; tip(e, `L${l} neuron ${i}` + (S.map ? ` · ${fmt(S.map[l * S.info.d_mlp + i])}` : ''));
+    if (S.drag) { S.drag.x1 = i % G; S.drag.y1 = Math.floor(i / G); showBox(S.drag); }
+    hov.style.display = 'block'; hov.style.left = (i % G) / G * 100 + '%'; hov.style.top = Math.floor(i / G) / G * 100 + '%'; hov.style.width = hov.style.height = 100 / G + '%'; };
+  cv.onmouseleave = () => { tip(); hov.style.display = 'none'; };
+  cv.onmousedown = e => { if (!S.areaMode) return; e.preventDefault(); const i = pix(cv, e); S.drag = { l: S.zoom, x0: i % G, y0: Math.floor(i / G), x1: i % G, y1: Math.floor(i / G) }; showBox(S.drag); };
+  addEventListener('mouseup', () => { if (!S.drag) return; S.area = S.drag; S.drag = null; showAreaBar(); });
+  cv.onclick = e => { if (!S.areaMode) select({ kind: 'neuron', layer: S.zoom, index: pix(cv, e) }); };
+  $('#zArea').onclick = () => setAreaMode(!S.areaMode);
+  $('#zLit').onchange = () => S.area && showAreaBar();
+  $('#zCancel').onclick = () => setAreaMode(false);
+  $('#zMake').onclick = () => {
+    const members = areaMembers(), name = $('#zName').value.trim() || `L${S.area.l}-area`;
+    upsertEdit({ kind: 'group', name, value: +$('#zVal').value, members, layer: 0, index: 0, vector: '', enabled: true });
+    $('#zName').value = ''; setAreaMode(false); status(`Group “${name}” added with ${members.length} neurons. Press Run to see its effect.`);
+  };
+  $('#zClose').onclick = closeZoom; $('#zPrev').onclick = () => openZoom(S.zoom - 1); $('#zNext').onclick = () => openZoom(S.zoom + 1);
+  addEventListener('keydown', e => { if (S.zoom == null || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return; if (e.key === 'Escape') closeZoom(); else if (e.key === 'ArrowLeft') openZoom(S.zoom - 1); else if (e.key === 'ArrowRight') openZoom(S.zoom + 1); });
+}
+function pix(cv, e) { const r = cv.getBoundingClientRect(); const x = Math.min(G - 1, Math.max(0, Math.floor((e.clientX - r.left) / r.width * G))), y = Math.min(G - 1, Math.max(0, Math.floor((e.clientY - r.top) / r.height * G))); return y * G + x; }
+function tip(e, text) { const t = $('#tip'); if (!e) { t.style.display = 'none'; return; } t.textContent = text; t.style.display = 'block'; t.style.left = Math.min(innerWidth - t.offsetWidth - 8, e.clientX + 12) + 'px'; t.style.top = (e.clientY + 14) + 'px'; }
+
+function layerScale(l) { // robust per-layer scale: ~99.9th percentile of |value|
+  const N = S.info.d_mlp, a = new Float32Array(N); for (let i = 0; i < N; i++) a[i] = Math.abs(S.map[l * N + i]); a.sort(); return a[Math.floor(N * 0.999)] || 1e-9;
+}
+function drawNet(fresh = true) {
+  if (!S.tiles) return;
+  const N = S.info.d_mlp;
+  if (fresh || !S.scales) S.scales = S.map ? S.tiles.map((_, l) => layerScale(l)) : null;
+  if (S.map3d) S.map3d.setValues(S.map, S.scales, S.gain);
+  S.tiles.forEach((t, l) => {
+    const img = t.ctx.createImageData(G, G);
+    if (S.map) { const sc = S.scales[l] / S.gain; for (let i = 0; i < N; i++) { const c = color(S.map[l * N + i] / sc); img.data[i * 4] = c[0]; img.data[i * 4 + 1] = c[1]; img.data[i * 4 + 2] = c[2]; img.data[i * 4 + 3] = 255; } }
+    t.ctx.putImageData(img, 0, 0);
+  });
+  drawZoom(); drawHeads(); drawMarks();
+}
+function headValues() { // per layer array of per-head values for the current view
+  if (S.mode === 'diff') { const v = S.vectors.find(v => v.name === S.vec); return S.headDiff && S.headDiff.name === S.vec ? S.headDiff.heads : null; }
+  if (!S.run) return null;
+  const pos = positions();
+  return S.run.heads.map(h => { const out = new Array(h[0].length).fill(0); for (const p of pos) for (let k = 0; k < out.length; k++) out[k] += h[p][k] / pos.length; return out; });
+}
+function positions() { const T = S.run.tokens.length, n = S.run.n_prompt; if (S.scope === 'gen') return T > n ? [...Array(T - n).keys()].map(i => i + n) : [T - 1]; if (S.scope === 'all') return [...Array(T).keys()]; return [+S.scope]; }
+function drawHeads() {
+  const hv = headValues();
+  if (S.map3d) S.map3d.setHeads(hv, S.gain);
+  S.tiles.forEach((t, l) => {
+    const v = hv && hv[l], mx = v ? Math.max(...v.map(Math.abs), 1e-9) : 1;
+    t.cells.forEach((c, h) => {
+      c.style.background = v ? css(v[h] / mx * Math.min(1, S.gain)) : '';
+      c.dataset.v = v ? fmt(v[h]) : '';
+      c.className = (S.sel && S.sel.kind === 'head' && S.sel.layer === l && S.sel.index === h ? 'sel ' : '') + (S.edits.some(e => e.kind === 'head' && e.layer === l && e.index === h && e.enabled) ? 'ed' : '');
+    });
+  });
+}
+function drawMarks() {
+  if (S.map3d) S.map3d.setMarks(S.sel, S.edits);
+  document.querySelectorAll('.mark').forEach(m => m.remove());
+  const put = (l, i, cls) => { const m = el('div', { className: 'mark ' + cls }); m.style.left = ((i % G) + .5) / G * 100 + '%'; m.style.top = (Math.floor(i / G) + .5) / G * 100 + '%'; S.tiles[l].wrap.append(m); };
+  for (const e of S.edits) if (e.kind === 'neuron' && e.enabled) put(e.layer, e.index, 'ed');
+  for (const e of S.edits) if (e.kind === 'group' && e.enabled && e.members.length <= 150) for (const [l, i] of e.members) put(l, i, 'ed'); // bigger groups show in the 3D map and enlarged view
+  if (S.sel && S.sel.kind === 'neuron') put(S.sel.layer, S.sel.index, '');
+  drawZoomOver();
+  if (S.zoom != null) { // same markers on the enlarged layer
+    const zput = (i, cls) => { const m = el('div', { className: 'mark ' + cls }); m.style.left = ((i % G) + .5) / G * 100 + '%'; m.style.top = (Math.floor(i / G) + .5) / G * 100 + '%'; m.style.width = m.style.height = '16px'; m.style.margin = '-8px 0 0 -8px'; $('#zWrap').append(m); };
+    for (const e of S.edits) if (e.kind === 'neuron' && e.enabled && e.layer === S.zoom) zput(e.index, 'ed');
+    if (S.sel && S.sel.kind === 'neuron' && S.sel.layer === S.zoom) zput(S.sel.index, '');
+  }
+}
+
+/* ---------- loading maps ---------- */
+const loadMap = guard(async () => {
+  const my = ++S.req; let map = null;
+  if (S.mode === 'diff') { if (S.vec) map = await api(`/api/contrast/${S.vec}/mlp`, {}, true); }
+  else if (S.run) map = await api(`/api/run/${S.run.id}/mlp?scope=${S.scope}&mode=${S.mode}`, {}, true);
+  if (my !== S.req) return;
+  S.map = map; drawNet(); renderTop(); hint();
+});
+/* ---------- pathways ---------- */
+function clearGraph() { S.graph = null; if (S.map3d) S.map3d.setGraph(null); markSources(); }
+function markSources() { // underline the earlier words the traced heads were reading
+  const src = new Map(); if (S.graph) for (const n of S.graph.nodes) if (n.kind === 'word') src.set(n.index, n.weight);
+  S.tokSpans.forEach((s, i) => s.classList.toggle('src', src.has(i)));
+}
+const loadGraph = guard(async () => {
+  const i = +S.scope, run = S.run;
+  if (!run || !/^\d+$/.test(S.scope) || i < 1 || S.mode === 'diff' || S.playing || S.view !== '3d') return clearGraph();
+  const g = await api(`/api/run/${run.id}/graph?tok=${i - 1}`);
+  if (S.run !== run || S.scope !== String(i) || S.playing) return;
+  S.graph = g; S.map3d.setGraph(g); markSources(); hint();
+});
+function setView(v) {
+  S.view = v; document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('on', b.dataset.view === v));
+  $('#map3d').style.display = v === '3d' ? '' : 'none'; $('#net').style.display = v === 'grid' ? '' : 'none';
+  if (S.map3d) S.map3d.setActive(v === '3d'); if (v === '3d') loadGraph(); hint();
+}
+document.querySelectorAll('#viewSeg button').forEach(b => b.onclick = () => setView(b.dataset.view));
+$('#resetView').onclick = () => S.map3d && S.map3d.resetView();
+
+function hint() {
+  if (S.view === '3d' && S.mode !== 'diff' && S.run) {
+    const tokSel = /^\d+$/.test(S.scope);
+    $('#viewHint').textContent = (S.graph && tokSel ? `Pathway behind “${showTok(S.graph.target)}”: particles flow from cause to effect — orange pushes the next unit up, blue pushes it down. Labels show the word each neuron promotes; purple dots are heads carrying information in from earlier words, and the purple words on the left (underlined above) are the ones those heads were reading. `
+      : 'Click a word above to trace the pathway that made the model write it. ') + (S.mode === 'act' ? 'Glow = how strongly each neuron fired.' : S.mode === 'effect' ? 'Glow = what your edits changed: orange fired more than in the unedited model, blue fired less.' : 'Glow = how much each neuron pushed toward the word actually written.');
+    return;
+  }
+  if (S.mode === 'effect' && S.run) { $('#viewHint').textContent = 'Edit effect: this run compared with the unedited model reading exactly the same words. Orange neurons fired more because of your edits, blue fired less. Edited neurons themselves show up too.'; return; }
+  const where = S.scope === 'gen' ? 'averaged over the answer' : S.scope === 'all' ? 'averaged over all tokens' : `at token ${S.scope} “${showTok(S.run ? S.run.tokens[+S.scope] : '')}”`;
+  $('#viewHint').textContent = S.mode === 'diff' ? (S.vec ? `Contrast “${S.vec}”: orange neurons fire more under system prompt A, blue more under B.` : 'Compute a contrast in the Steering tab first.')
+    : !S.run ? '' : S.mode === 'act' ? `Each square is one layer's 9,216 MLP neurons (position in the square is just the neuron's index). Showing activation ${where}; each layer has its own brightness scale.`
+    : `Showing how much each neuron directly pushed toward the token the model wrote next, ${where}. Orange = pushed for it, blue = pushed against it.`;
+}
+
+/* ---------- tokens ---------- */
+function renderTokens() {
+  const box = $('#tokens'); box.textContent = ''; S.tokSpans = [];
+  S.run.tokens.forEach((t, i) => {
+    const img = t === IMG_TOK; // each ▪ is one patch of the attached picture
+    const s = el('span', { className: 'tok ' + (i < S.run.n_prompt ? 'p' : 'gen') + (String(i) === String(S.scope) ? ' sel' : ''), textContent: img ? '▪' : showTok(t), title: img ? `token ${i} · a patch of the picture` : 'token ' + i });
+    s.onclick = () => setScope(String(i)); box.append(s); S.tokSpans.push(s);
+  });
+  markSources();
+  const sel = box.querySelector('.sel'); if (sel) sel.scrollIntoView({ block: 'nearest' });
+}
+function setScope(scope, fromPlay = false) {
+  if (!fromPlay) stopPlay();
+  S.scope = scope;
+  document.querySelectorAll('#scopeSeg button').forEach(b => b.classList.toggle('on', b.dataset.scope === scope));
+  if (S.run) { renderTokens(); if (S.mode !== 'diff') loadMap(); else drawHeads(); if (/^\d+$/.test(scope)) loadLens(+scope); if (!fromPlay) loadGraph(); }
+}
+function stopPlay() { if (S.playing) { clearInterval(S.playing); S.playing = null; $('#playBtn').textContent = '▶ Play'; loadGraph(); } }
+$('#playBtn').onclick = () => {
+  if (S.playing) return stopPlay(); if (!S.run) return;
+  if (S.mode === 'diff') setMode('act');
+  let i = /^\d+$/.test(S.scope) && +S.scope >= S.run.n_prompt - 1 && +S.scope < S.run.tokens.length - 1 ? +S.scope : S.run.n_prompt - 1;
+  $('#playBtn').textContent = '❚❚ Pause'; clearGraph();
+  S.playing = setInterval(() => { i++; if (i >= S.run.tokens.length) return stopPlay(); setScope(String(i), true); }, 450);
+};
+document.querySelectorAll('#scopeSeg button').forEach(b => b.onclick = () => setScope(b.dataset.scope));
+function setMode(m) {
+  if (m === 'effect' && !(S.run && S.run.edits.length)) return status(S.run ? 'This run had no edits applied. Add an edit, tick “Apply my edits” and run again.' : 'Run a prompt first.', true);
+  S.mode = m; document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', b.dataset.mode === m)); if (m === 'diff' && !S.vec) { const v = S.vectors.find(v => v.has_map); if (v) S.vec = v.name; } loadMap(); loadGraph(); }
+document.querySelectorAll('#modeSeg button').forEach(b => b.onclick = () => { stopPlay(); setMode(b.dataset.mode); });
+$('#gain').oninput = e => { S.gain = +e.target.value; drawNet(false); };
+
+/* ---------- running ---------- */
+function diffWords(a, b) { // word-level diff -> [pieces of a, pieces of b] with the changed words wrapped in highlight spans
+  const A = a.split(/(\s+)/).filter(Boolean), B = b.split(/(\s+)/).filter(Boolean), n = A.length, m = B.length;
+  const dp = Array.from({ length: n + 1 }, () => new Uint16Array(m + 1));
+  for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--) dp[i][j] = A[i] === B[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  const oa = [], ob = []; let i = 0, j = 0, changed = 0;
+  const push = (arr, t, cls) => { if (cls && t.trim()) { arr.push(el('span', { className: cls, textContent: t })); changed++; } else arr.push(t); };
+  while (i < n || j < m) {
+    if (i < n && j < m && A[i] === B[j]) { push(oa, A[i++]); push(ob, B[j++]); }
+    else if (j < m && (i === n || dp[i][j + 1] >= dp[i + 1][j])) push(ob, B[j++], 'diff-add');
+    else push(oa, A[i++], 'diff-del');
+  }
+  return [oa, ob, changed];
+}
+function splitThink(text, thinking) { // -> [private reasoning, what the model actually said]
+  const k = text.indexOf('</think>');
+  if (k >= 0) return [text.slice(0, k).trim(), text.slice(k + 8).trim()];
+  return thinking ? [text.trim(), ''] : ['', text.trim()];
+}
+function answerBox(title, think, pieces, cutOff) {
+  const box = el('div', { className: 'answer' }, el('small', { textContent: title }));
+  if (think) box.append(el('div', { className: 'think', title: 'The model\'s private reasoning', textContent: think }));
+  if (cutOff) box.append(el('div', { className: 'hint', textContent: 'It ran out of tokens while still thinking — raise the answer length (300+).' }));
+  else box.append(...pieces);
+  return box;
+}
+function showConversation(run, base) {
+  const a = $('#answers'); a.textContent = '';
+  const msgs = run.messages.filter(m => m.role !== 'system'), prior = msgs.slice(0, -2), who = m => m.role === 'user' ? 'You' : m.role === 'tool' ? 'Tool result' : 'Model';
+  if (prior.length) {
+    const box = el('div', { className: 'answer convo' }, el('small', { textContent: `Conversation so far · ${prior.length / 2} earlier turn${prior.length > 2 ? 's' : ''}` }));
+    prior.forEach(m => box.append(el('div', { className: 'msg' }, el('b', { textContent: who(m) + ': ' }), (m.image ? '🖼 ' : '') + m.content)));
+    const last = msgs[msgs.length - 2];
+    a.append(box, el('div', { className: 'answer' }, el('small', { textContent: `${who(last)} · turn ${msgs.length / 2}` }), (last.image ? '🖼 ' : '') + last.content));
+    box.scrollTop = box.scrollHeight;
+  }
+  const [th, said] = splitThink(run.answer, run.thinking);
+  let mine = [said || '(empty)'], note = '';
+  if (base) {
+    const [bth, bsaid] = splitThink(base.answer, base.thinking), [da, db, changed] = diffWords(bsaid, said);
+    a.append(answerBox('Unedited', bth, bsaid ? da : ['(empty)'], base.thinking && !bsaid));
+    if (said) mine = db; note = changed ? ' · changed words highlighted' : ' · identical to unedited';
+  }
+  a.append(answerBox((run.edits.length ? 'With edits' : 'Answer') + ` · ${run.gen_seconds}s` + note, th, mine, run.thinking && !said));
+  $('#contBtn').disabled = false;
+  const called = run.answer.includes('<tool_call>');
+  $('#asToolRow').style.display = called ? '' : 'none'; $('#asTool').checked = called;
+  $('#chatHint').textContent = (called ? 'The model asked to use a tool. Type what the tool returns (e.g. “18 °C, sunny”) and press Continue chat. ' : `Continue chat adds turn ${msgs.length / 2 + 1} to this conversation` + (run.system ? ' (keeping its system prompt)' : '') + '. ') + (run.tools ? 'Tools stay on for this conversation. ' : '') + 'Run starts fresh.';
+}
+function setImage(dataUrl) {
+  S.img = dataUrl; const info = $('#imgInfo'); info.textContent = '';
+  if (dataUrl) info.append(el('img', { className: 'thumb', src: dataUrl }), ' ', el('button', { className: 'small', textContent: '✕', title: 'Remove the picture', onclick: () => setImage(null) }));
+}
+$('#imgBtn').onclick = () => $('#imgFile').click();
+$('#imgFile').onchange = guard(async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  const bmp = await createImageBitmap(f), k = Math.min(1, 896 / Math.max(bmp.width, bmp.height));
+  const c = el('canvas', { width: Math.round(bmp.width * k), height: Math.round(bmp.height * k) }); c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  setImage(c.toDataURL('image/jpeg', 0.92));
+});
+const doRun = guard(async (cont = false) => {
+  const body = { prompt: $('#prompt').value, system: $('#system').value, max_new_tokens: +$('#maxnew').value, use_edits: $('#useEdits').checked, thinking: $('#thinking').checked };
+  if (cont) { if (!S.run) return; body.continue_from = S.run.id; if ($('#asTool').checked && $('#asToolRow').style.display !== 'none') body.role = 'tool'; }
+  else body.tools = $('#tools').checked;
+  if (S.img && body.role !== 'tool') body.image = S.img;
+  if (!body.prompt.trim()) return status('Type a prompt first.', true);
+  const active = S.edits.some(e => e.enabled) && body.use_edits;
+  $('#runBtn').disabled = $('#contBtn').disabled = true; status('Running the model…', false, true);
+  try {
+    let base = null;
+    if (active && $('#alsoBase').checked) base = await api('/api/run', { method: 'POST', body: { ...body, use_edits: false } });
+    const run = await api('/api/run', { method: 'POST', body });
+    for (const r of base ? [base, run] : [run]) addRunOption(r);
+    if (cont) $('#prompt').value = '';
+    setImage(null);
+    // in the 3D map start on the first word of the answer so its pathway is traced straight away
+    if (S.view === '3d' && run.tokens.length > run.n_prompt) S.scope = String(run.n_prompt);
+    document.querySelectorAll('#scopeSeg button').forEach(b => b.classList.toggle('on', b.dataset.scope === S.scope));
+    setRun(run, base); status('');
+  } finally { $('#runBtn').disabled = false; $('#contBtn').disabled = !S.run; }
+});
+$('#runBtn').onclick = () => doRun(false);
+$('#contBtn').onclick = () => doRun(true);
+$('#prompt').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (e.ctrlKey || e.metaKey) { e.preventDefault(); doRun(false); }
+  else if (e.shiftKey && S.run) { e.preventDefault(); doRun(true); }
+});
+function addRunOption(r, select = true) {
+  const s = $('#runSel'); if ([...s.options].some(o => o.value === r.id)) return;
+  s.append(el('option', { value: r.id, textContent: `${r.id}${r.edits && r.edits.length ? ' ✎' : ''} · ${r.label}` }));
+}
+$('#runSel').onchange = guard(async e => { if (e.target.value) setRun(await api('/api/run/' + e.target.value)); });
+function setRun(run, base = null) {
+  stopPlay(); S.run = run; $('#runSel').value = run.id; showConversation(run, base);
+  if (/^\d+$/.test(S.scope) && +S.scope >= run.tokens.length) S.scope = 'gen';
+  if (S.mode === 'diff' || (S.mode === 'effect' && !run.edits.length)) { S.mode = 'act'; document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', b.dataset.mode === 'act')); }
+  clearGraph(); renderTokens(); loadMap(); if (S.sel) renderDetail(); if (/^\d+$/.test(S.scope)) loadLens(+S.scope); loadGraph();
+}
+
+/* ---------- right: top neurons ---------- */
+function renderTop() {
+  const p = $('#pane-top'); p.textContent = '';
+  if (!S.map) { p.append(el('div', { className: 'hint', textContent: 'Run a prompt first.' })); return; }
+  const N = S.info.d_mlp, K = 60, idx = []; let thr = 0;
+  // top-K by |value| via a simple threshold pass
+  const abs = Float32Array.from(S.map, Math.abs), sorted = abs.slice().sort(); thr = sorted[sorted.length - K];
+  for (let i = 0; i < abs.length && idx.length < K + 20; i++) if (abs[i] >= thr) idx.push(i);
+  idx.sort((a, b) => abs[b] - abs[a]); const mx = abs[idx[0]] || 1;
+  p.append(el('div', { className: 'hint', textContent: S.mode === 'act' ? 'Strongest-firing neurons across the whole network for the current view.' : S.mode === 'attr' ? 'Neurons that most directly pushed for (or against) what the model wrote.' : S.mode === 'effect' ? 'Neurons whose firing your edits changed the most (edited neurons included).' : 'Neurons that differ most between the two personalities. These are your best candidates to tweak.' }));
+  { // edit the strongest neurons of this view together, as one group
+    const cnt = el('input', { type: 'number', min: 2, max: 2000, value: 20 }), side = el('select', {}, el('option', { value: 'pos', textContent: 'orange (+)' }), el('option', { value: 'neg', textContent: 'blue (−)' }), el('option', { value: 'both', textContent: 'either' }));
+    const name = el('input', { type: 'text', value: S.mode === 'diff' && S.vec ? `${S.vec}-top` : `top-${S.mode}` }), val = el('input', { type: 'number', step: '0.25', value: S.mode === 'diff' ? 2 : 0 });
+    cnt.style.flex = '0 0 58px'; val.style.flex = '0 0 58px';
+    const make = el('button', { className: 'fit', textContent: 'Make group edit', onclick: () => {
+      const want = Math.max(1, Math.min(2000, +cnt.value || 20)), s = side.value, order = [];
+      for (let i = 0; i < S.map.length; i++) if (abs[i] > 0 && (s === 'both' || (s === 'pos') === (S.map[i] > 0))) order.push(i);
+      order.sort((a, b) => abs[b] - abs[a]);
+      const members = order.slice(0, want).map(i => [Math.floor(i / N), i % N]); if (!members.length) return status('No neurons match.', true);
+      upsertEdit({ kind: 'group', name: name.value.trim() || 'group', value: +val.value, members, layer: 0, index: 0, vector: '', enabled: true });
+      status(`Group “${name.value.trim() || 'group'}” added with ${members.length} neurons. Press Run to see its effect.`);
+    } });
+    p.append(el('div', { className: 'box', style: 'margin-top:8px' },
+      el('div', { className: 'row' }, el('span', { className: 'fit hint', textContent: 'Group the top' }), cnt, side),
+      el('div', { className: 'row', style: 'margin-top:5px' }, el('span', { className: 'fit hint', textContent: 'as' }), name, el('span', { className: 'fit hint', textContent: '×' }), val, make),
+      el('div', { className: 'hint', style: 'margin-top:4px', textContent: 'Scales all of them together as one edit. ×0 silences them, ×2 doubles them.' })));
+  }
+  const tb = el('tbody');
+  for (const i of idx.slice(0, K)) {
+    const l = Math.floor(i / N), n = i % N, v = S.map[i];
+    const bar = el('div', { className: 'bar' }); bar.style.width = (abs[i] / mx * 100) + '%'; bar.style.background = v >= 0 ? 'var(--pos)' : 'var(--neg)';
+    const tr = el('tr', { className: 'click' }, el('td', { textContent: 'L' + l }), el('td', { className: 'mono', textContent: n }), el('td', { className: 'n', textContent: fmt(v) }), el('td', { style: 'width:40%' }, bar));
+    tr.onclick = () => select({ kind: 'neuron', layer: l, index: n }); tb.append(tr);
+  }
+  p.append(el('table', {}, el('thead', {}, el('tr', {}, el('th', { textContent: 'Layer' }), el('th', { textContent: 'Neuron' }), el('th', { textContent: 'Value' }), el('th'))), tb));
+}
+
+/* ---------- right: selection detail ---------- */
+function tab(name) { document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === name)); document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id === 'pane-' + name)); }
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => tab(b.dataset.tab));
+function select(sel) { S.sel = sel; drawHeads(); drawZoom(); drawMarks(); tab('detail'); renderDetail(); }
+function editControls(sel) {
+  const cur = S.edits.find(e => e.kind === sel.kind && e.layer === sel.layer && e.index === sel.index);
+  const inp = el('input', { type: 'number', step: '0.25', value: cur ? cur.value : 2 }); inp.style.width = '70px'; inp.style.flex = '0 0 70px';
+  const set = v => upsertEdit({ kind: sel.kind, layer: sel.layer, index: sel.index, value: v, vector: '', enabled: true });
+  const row = el('div', { className: 'row' },
+    el('button', { className: 'fit', textContent: 'Ablate (×0)', title: 'Silence it completely', onclick: () => set(0) }),
+    el('button', { className: 'fit', textContent: 'Boost ×', title: 'Multiply its output by the number on the right (negative flips it)', onclick: () => set(+inp.value) }), inp);
+  if (cur) row.append(el('button', { className: 'fit', textContent: 'Remove edit', onclick: () => { S.edits = S.edits.filter(e => e !== cur); saveEdits(); renderDetail(); } }));
+  return el('div', {}, row, el('div', { className: 'hint', style: 'margin-top:4px', textContent: cur ? `Currently ×${cur.value}. Press Run to see the effect.` : 'Adds an edit, then press Run to compare answers.' }));
+}
+const renderDetail = guard(async () => {
+  const p = $('#pane-detail'), sel = S.sel; if (!sel) return;
+  p.textContent = '';
+  if (sel.kind === 'head') {
+    p.append(el('h2', { textContent: `Layer ${sel.layer} · head ${sel.index} (${S.info.layer_types[sel.layer] === 'full_attention' ? 'attention' : 'delta-net'})` }), editControls(sel));
+    if (S.run) {
+      const v = S.run.heads[sel.layer].map(r => r[sel.index]), mx = Math.max(...v.slice(1), 1e-9);
+      p.append(el('h2', { textContent: 'Output strength per token' }), actsBox(v, mx));
+    }
+    return;
+  }
+  const mine = el('div'), look = el('div'); // this run's details, then what the neuron responds to in general
+  p.append(el('h2', { textContent: `Layer ${sel.layer} · neuron ${sel.index}` }), editControls(sel), mine, look);
+  renderLookup(look, sel);
+  if (!S.run) return;
+  const d = await api(`/api/run/${S.run.id}/neuron?layer=${sel.layer}&index=${sel.index}`);
+  if (S.sel !== sel) return;
+  const mx = Math.max(...d.acts.slice(1).map(Math.abs), 1e-9);
+  mine.append(el('h2', { textContent: 'Where it fired in this run' }), actsBox(d.acts, mx),
+    el('div', { className: 'hint', textContent: `Peak ${fmt(mx)}. Orange = positive, blue = negative.` }),
+    el('h2', { textContent: 'When positive, it pushes the model toward' }), chips(d.promotes),
+    el('h2', { textContent: 'and away from' }), chips(d.suppresses),
+    el('div', { className: 'hint', style: 'margin-top:6px', textContent: 'Token lists come from the neuron\'s output weights read straight through the final layer — reliable for late layers, a rough guide for early ones.' }));
+});
+/* ---------- what does this neuron respond to? (lookup over the corpus) ---------- */
+function shade(tokens, acts, mx, peak) {
+  const box = el('div', { className: 'ex' });
+  tokens.forEach((t, i) => { const s = el('span', { textContent: showTok(t), title: fmt(acts[i]) }); const a = Math.max(-1, Math.min(1, acts[i] / mx)); if (Math.abs(a) > 0.06) { s.style.background = css(a); if (Math.abs(a) > 0.5) s.style.color = '#000'; } if (i === peak) s.className = 'pk'; box.append(s); });
+  return box;
+}
+let lookupPoll;
+const buildLookup = guard(async () => {
+  S.lookup = await api('/api/lookup/build', { method: 'POST' }); if (S.sel) renderDetail();
+  clearInterval(lookupPoll);
+  lookupPoll = setInterval(guard(async () => {
+    S.lookup = await api('/api/lookup');
+    if (S.lookup.status === 'building') { const b = $('#lookupProg'); if (b) b.textContent = `Reading passages… ${S.lookup.done} / ${S.lookup.total}`; return; }
+    clearInterval(lookupPoll); if (S.lookup.status === 'error') status('Lookup failed: ' + S.lookup.error, true); if (S.sel) renderDetail();
+  }), 1000);
+});
+const renderLookup = guard(async (box, sel) => {
+  const lk = S.lookup || { status: 'none' };
+  box.append(el('h2', { textContent: 'What it responds to in general' }));
+  if (lk.status === 'building') return box.append(el('div', { className: 'hint', id: 'lookupProg', textContent: `Reading passages… ${lk.done} / ${lk.total}` }));
+  if (lk.status !== 'ready') return box.append(el('div', { className: 'hint', textContent: `One prompt only shows a neuron in one situation. Build the lookup to see, for any neuron, the passages (out of ${lk.corpus || 'a few hundred'} varied ones in corpus.txt) that make it fire hardest. Takes under a minute, once.` }), el('button', { textContent: 'Build lookup', style: 'margin-top:6px', onclick: buildLookup }));
+  const d = await api(`/api/lookup/neuron?layer=${sel.layer}&index=${sel.index}`);
+  if (S.sel !== sel) return;
+  const all = [...d.pos, ...d.neg], mx = Math.max(...all.map(x => Math.abs(x.value)), 1e-9);
+  const words = side => [...new Set(side.map(x => showTok(x.tokens[x.peak] || '').trim()).filter(Boolean))];
+  const part = (title, side) => { if (!side.length) return; box.append(el('div', { className: 'hint', style: 'margin:6px 0 3px', textContent: title }), el('div', {}, ...words(side).map(w => el('span', { className: 'chip', textContent: w }))), ...side.map(x => shade(x.tokens, x.acts, mx, x.peak))); };
+  part('Fires most strongly (positive) on — the outlined word is the peak:', d.pos);
+  part('Most negative on:', d.neg);
+  box.append(el('div', { className: 'hint', textContent: `Strongest examples out of ${d.passages} passages from corpus.txt. Add your own lines to that file, then ` }), el('button', { className: 'small', textContent: 'Rebuild lookup', onclick: buildLookup }));
+});
+function actsBox(vals, mx) {
+  const box = el('div', { className: 'acts' });
+  S.run.tokens.forEach((t, i) => { const s = el('span', { textContent: t === IMG_TOK ? '▪' : showTok(t), title: `token ${i}: ${fmt(vals[i])}` }); const a = Math.max(-1, Math.min(1, vals[i] / mx)); if (Math.abs(a) > 0.04) { s.style.background = css(a); if (Math.abs(a) > 0.5) s.style.color = '#000'; } box.append(s); });
+  return box;
+}
+const chips = list => el('div', {}, ...list.map(([t, v]) => el('span', { className: 'chip', textContent: showTok(t), title: fmt(v) })));
+
+/* ---------- right: logit lens ---------- */
+const loadLens = guard(async tok => {
+  const p = $('#pane-lens'), run = S.run; const rows = await api(`/api/run/${run.id}/lens?tok=${tok}`);
+  if (S.run !== run || String(tok) !== String(S.scope)) return;
+  p.textContent = '';
+  const next = run.tokens[tok + 1];
+  p.append(el('div', { className: 'hint', textContent: `After reading token ${tok} “${showTok(run.tokens[tok])}”, this is the model's best guess for the next token if you cut it off after each layer.` + (next !== undefined ? ` It actually wrote “${showTok(next)}”.` : '') }));
+  const tb = el('tbody');
+  rows.forEach((r, l) => {
+    const bar = el('div', { className: 'bar' }); bar.style.width = (r[0][1] * 100) + '%'; bar.style.background = r[0][0] === next ? 'var(--ok)' : 'var(--accent)';
+    tb.append(el('tr', {}, el('td', { textContent: 'L' + l }), el('td', {}, el('span', { className: 'chip', textContent: showTok(r[0][0]) })), el('td', { className: 'n', textContent: (r[0][1] * 100).toFixed(0) + '%' }), el('td', { style: 'width:22%' }, bar), el('td', { className: 'hint mono', textContent: r.slice(1, 3).map(x => showTok(x[0]).trim()).join(' · ') })));
+  });
+  p.append(el('table', {}, el('thead', {}, el('tr', {}, el('th', { textContent: 'After' }), el('th', { textContent: 'Top guess' }), el('th'), el('th'), el('th', { textContent: 'Runners-up' }))), tb));
+});
+
+/* ---------- edits ---------- */
+function upsertEdit(e) {
+  const i = S.edits.findIndex(x => x.kind === e.kind && (e.kind === 'group' ? x.name === e.name : x.layer === e.layer && (e.kind === 'steer' ? x.vector === e.vector : x.index === e.index)));
+  if (i >= 0) S.edits[i] = e; else S.edits.push(e);
+  saveEdits(); if (S.sel) renderDetail();
+}
+const saveEdits = guard(async () => { S.edits = await api('/api/edits', { method: 'PUT', body: S.edits }); renderEdits(); drawHeads(); drawMarks(); });
+function renderEdits() {
+  const box = $('#edits'); box.textContent = '';
+  if (!S.edits.length) { box.append(el('div', { className: 'hint', textContent: 'None yet. Click a neuron or head in the map, then ablate or boost it — or build a steering vector in the Steering tab.' })); return; }
+  S.edits.forEach(e => {
+    const on = el('input', { type: 'checkbox', checked: e.enabled, title: 'Enable / disable' }); on.onchange = () => { e.enabled = on.checked; saveEdits(); };
+    const name = el('span', { textContent: e.kind === 'group' ? `Group “${e.name}” · ${e.members.length} neurons` : e.kind === 'steer' ? `Steer “${e.vector}” @ L${e.layer}` : e.kind === 'head' ? `L${e.layer} head ${e.index}` : `L${e.layer} neuron ${e.index}`, style: 'cursor:pointer' });
+    if (e.kind === 'group') { const ls = [...new Set(e.members.map(m => m[0]))].sort((a, b) => a - b); name.title = `Layers ${ls.join(', ')} — click to enlarge the first one`; name.onclick = () => openZoom(ls[0]); }
+    else if (e.kind !== 'steer') name.onclick = () => select({ kind: e.kind, layer: e.layer, index: e.index });
+    const val = el('input', { type: 'number', step: '0.25', value: e.value, title: e.kind === 'steer' ? 'Strength (1 = the natural A−B difference)' : 'Multiplier (0 = ablate)' }); val.onchange = () => { e.value = +val.value; saveEdits(); };
+    const del = el('button', { className: 'small', textContent: '✕', title: 'Remove' }); del.onclick = () => { S.edits = S.edits.filter(x => x !== e); saveEdits(); };
+    box.append(el('div', { className: 'edit' }, on, name, val, del));
+  });
+}
+$('#clearEdits').onclick = () => { S.edits = []; saveEdits(); };
+/* ---------- presets ---------- */
+function renderPresets() {
+  const s = $('#presetSel'), cur = s.value; s.textContent = '';
+  if (!S.presets.length) s.append(el('option', { value: '', textContent: '— none saved —' }));
+  for (const n of S.presets) s.append(el('option', { value: n, textContent: n }));
+  if (S.presets.includes(cur)) s.value = cur;
+  $('#presetLoad').disabled = $('#presetDel').disabled = !S.presets.length;
+}
+$('#presetSave').onclick = guard(async () => {
+  const n = $('#presetName').value.trim(); if (!/^[A-Za-z0-9_-]{1,40}$/.test(n)) return status('Preset name: letters, digits, - or _ only.', true);
+  S.presets = await api('/api/presets/' + n, { method: 'PUT' }); renderPresets(); $('#presetSel').value = n; $('#presetName').value = ''; status(`Saved ${S.edits.length} edit(s) as “${n}”.`);
+});
+$('#presetLoad').onclick = guard(async () => {
+  const n = $('#presetSel').value; if (!n) return;
+  const r = await api(`/api/presets/${n}/load`, { method: 'POST' }); S.edits = r.edits; renderEdits(); drawHeads(); drawMarks(); if (S.sel) renderDetail();
+  status(`Loaded “${n}” (${r.edits.length} edit(s))` + (r.skipped ? ` — ${r.skipped} skipped because their steering vector no longer exists.` : '.'));
+});
+$('#presetDel').onclick = guard(async () => { const n = $('#presetSel').value; if (!n) return; S.presets = await api('/api/presets/' + n, { method: 'DELETE' }); renderPresets(); });
+/* ---------- test suite ---------- */
+$('#suiteSave').onclick = guard(async () => { const list = await api('/api/suite', { method: 'PUT', body: $('#suitePrompts').value.split('\n') }); $('#suitePrompts').value = list.join('\n'); status('Test list saved.'); });
+$('#suiteRun').onclick = guard(async () => {
+  const prompts = $('#suitePrompts').value.split('\n').map(s => s.trim()).filter(Boolean), len = +$('#suiteLen').value || 40, out = $('#suiteOut');
+  if (!prompts.length) return status('Add at least one test prompt.', true);
+  const edited = S.edits.some(e => e.enabled), system = $('#system').value;
+  $('#suiteRun').disabled = true; out.textContent = ''; let changedN = 0;
+  const head = el('div', { className: 'hint' }); out.append(head);
+  try {
+    for (let k = 0; k < prompts.length; k++) {
+      const p = prompts[k], key = JSON.stringify([p, system, len]);
+      status(`Test ${k + 1} of ${prompts.length}…`, false, true);
+      if (!S.suiteBase[key]) S.suiteBase[key] = (await api('/api/generate', { method: 'POST', body: { prompt: p, system, max_new_tokens: len, use_edits: false } })).answer; // unedited answers never change, so keep them
+      const base = S.suiteBase[key], box = el('div', { className: 'box' }, el('b', { textContent: p }));
+      if (edited) {
+        const mine = (await api('/api/generate', { method: 'POST', body: { prompt: p, system, max_new_tokens: len } })).answer, [da, db, changed] = diffWords(base, mine);
+        if (changed) changedN++;
+        box.append(el('div', { className: 'answer' }, el('small', { textContent: 'Unedited' }), ...da), el('div', { className: 'answer' }, el('small', { textContent: changed ? 'With edits' : 'With edits · identical' }), ...db));
+      } else box.append(el('div', { className: 'answer' }, el('small', { textContent: 'Unedited' }), base));
+      out.append(box);
+    }
+    head.textContent = edited ? `${changedN} of ${prompts.length} answers changed with your edits` + (system.trim() ? ' (using the system prompt on the left).' : '.') : 'You have no enabled edits, so only the unedited answers are shown.';
+    status('');
+  } finally { $('#suiteRun').disabled = false; }
+});
+$('#exportBtn').onclick = guard(async () => {
+  const name = $('#exportName').value.trim() || 'my-edited-qwen';
+  if (!confirm(`Save a full copy of the model with your enabled edits to exports/${name}? This writes about 9 GB and takes a few minutes.`)) return;
+  $('#exportBtn').disabled = true; status('Saving model copy…', false, true);
+  try { const r = await api('/api/export', { method: 'POST', body: { name } }); status(''); alert(`Saved to ${r.path}\n\n${r.baked} neuron/head edit(s) baked into the weights.` + (r.steering ? `\n${r.steering} steering edit(s) saved to steering.safetensors — load with load_steered.py in that folder, because steering cannot be stored in this model's weights.` : '')); }
+  finally { $('#exportBtn').disabled = false; }
+});
+
+/* ---------- steering ---------- */
+function renderVectors() {
+  const box = $('#vectors'); box.textContent = '';
+  if (!S.vectors.length) { box.append(el('div', { className: 'hint', textContent: 'None yet.' })); return; }
+  for (const v of S.vectors) {
+    const rel = v.norm.map((n, i) => n / (v.typical_norm[i] || 1)), mx = Math.max(...rel);
+    if (S.steerLayer[v.name] === undefined) S.steerLayer[v.name] = Math.round(S.info.n_layers * 0.4);
+    const bars = el('div', { className: 'lbar' }), lab = el('span', { className: 'hint' });
+    const paint = () => { [...bars.children].forEach((b, i) => b.classList.toggle('sel', i === S.steerLayer[v.name])); lab.textContent = `Layer ${S.steerLayer[v.name]} selected`; };
+    rel.forEach((r, i) => { const b = el('i', { title: `Layer ${i}: difference is ${(r * 100).toFixed(0)}% of the signal size` }); b.style.height = Math.max(3, r / mx * 100) + '%'; b.onclick = () => { S.steerLayer[v.name] = i; paint(); }; bars.append(b); });
+    const str = el('input', { type: 'number', step: '0.25', value: 1 }); str.style.flex = '0 0 64px';
+    const add = el('button', { className: 'fit', textContent: 'Add steering edit', onclick: () => upsertEdit({ kind: 'steer', vector: v.name, layer: S.steerLayer[v.name], index: 0, value: +str.value, enabled: true }) });
+    const show = el('button', { className: 'fit small', textContent: 'Show neuron map', disabled: !v.has_map, title: v.has_map ? '' : 'Recompute this contrast to see its neuron map', onclick: () => { S.vec = v.name; stopPlay(); setMode('diff'); } });
+    box.append(el('div', { style: 'border:1px solid var(--line);border-radius:6px;padding:8px;margin-bottom:8px' },
+      el('div', { className: 'row' }, el('b', { textContent: v.name }), show),
+      el('div', { className: 'hint', textContent: 'How strongly the two personalities differ at each layer — click a bar to choose where to steer (middle layers usually work best):' }),
+      bars, el('div', { className: 'row' }, lab, el('span', { className: 'fit hint', textContent: 'strength' }), str, add),
+      el('div', { className: 'hint', textContent: 'Positive strength pushes toward A, negative toward B. 1 = the natural A−B difference. Start around 0.5–1.5; too high produces gibberish.' }),
+      sweepUI(v, str)));
+    paint();
+  }
+}
+/* try several steering strengths on the current prompt and slide between the answers */
+function sweepUI(v, strInput) {
+  const lo = el('input', { type: 'number', step: '0.25', value: 0 }), hi = el('input', { type: 'number', step: '0.25', value: 2 }), out = el('div');
+  lo.style.flex = hi.style.flex = '0 0 58px';
+  const show = () => {
+    const sw = S.sweeps[v.name]; out.textContent = ''; if (!sw) return;
+    const slider = el('input', { type: 'range', min: 0, max: sw.rows.length - 1, step: 1, value: sw.at, style: 'width:100%' });
+    const rows = sw.rows.map((r, i) => { const d = el('div', { className: 'sweep-row' + (i === sw.at ? ' on' : '') }, el('b', { textContent: '×' + r.value }), el('span', { textContent: r.answer || '(empty)' })); d.onclick = () => { sw.at = i; show(); }; return d; });
+    slider.oninput = () => { sw.at = +slider.value; rows.forEach((d, i) => d.classList.toggle('on', i === sw.at)); use.textContent = `Use ×${sw.rows[sw.at].value}`; rows[sw.at].scrollIntoView({ block: 'nearest' }); };
+    const use = el('button', { className: 'fit small', textContent: `Use ×${sw.rows[sw.at].value}`, onclick: () => { const val = sw.rows[sw.at].value; strInput.value = val; upsertEdit({ kind: 'steer', vector: v.name, layer: sw.layer, index: 0, value: val, enabled: true }); status(`Steering “${v.name}” set to ×${val} at layer ${sw.layer}.`); } });
+    out.append(el('div', { className: 'hint', style: 'margin-top:6px', textContent: `“${sw.prompt}” steered at layer ${sw.layer} — drag to compare:` }), el('div', { className: 'row' }, slider, use), ...rows);
+  };
+  const btn = el('button', { className: 'fit small', textContent: 'Try 5 strengths', title: 'Answer the prompt on the left at five strengths between these two numbers', onclick: guard(async () => {
+    const prompt = $('#prompt').value.trim() || (S.run && S.run.prompt) || ''; if (!prompt) return status('Type a prompt on the left first.', true);
+    const a = +lo.value, b = +hi.value, layer = S.steerLayer[v.name], rows = [];
+    const others = S.edits.filter(e => e.enabled && !(e.kind === 'steer' && e.vector === v.name));
+    btn.disabled = true;
+    try {
+      for (let k = 0; k < 5; k++) {
+        const value = Math.round((a + (b - a) * k / 4) * 100) / 100; status(`Trying strength ×${value} (${k + 1} of 5)…`, false, true);
+        const r = await api('/api/generate', { method: 'POST', body: { prompt, system: $('#system').value, max_new_tokens: Math.min(+$('#maxnew').value || 48, 80), edits: value ? [...others, { kind: 'steer', vector: v.name, layer, index: 0, value, enabled: true }] : others } });
+        rows.push({ value, answer: r.answer }); S.sweeps[v.name] = { prompt, layer, rows: rows.slice(), at: Math.min(S.sweeps[v.name] ? S.sweeps[v.name].at : 0, rows.length - 1) }; show();
+      }
+      status('');
+    } finally { btn.disabled = false; }
+  }) });
+  show();
+  return el('div', { style: 'margin-top:8px;border-top:1px solid var(--line);padding-top:6px' }, el('div', { className: 'row' }, el('span', { className: 'fit hint', textContent: 'Preview from' }), lo, el('span', { className: 'fit hint', textContent: 'to' }), hi, btn), out);
+}
+/* ---------- save a picture or video of the 3D map ---------- */
+function download(blob, name) { const a = el('a', { href: URL.createObjectURL(blob), download: name }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 10000); }
+const stamp = () => new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+$('#shotBtn').onclick = guard(async () => { if (S.map3d) download(await S.map3d.snapshot(), `neuron-map-${stamp()}.png`); });
+$('#recBtn').onclick = guard(async () => {
+  if (!S.map3d) return; const b = $('#recBtn');
+  if (S.map3d.isRecording()) { const blob = await S.map3d.stopRecording(); b.textContent = '⏺ Record'; b.classList.remove('rec'); download(blob, `neuron-map-${stamp()}.webm`); status('Video saved to your downloads folder.'); }
+  else { S.map3d.startRecording(); b.textContent = '⏹ Stop & save'; b.classList.add('rec'); status('Recording the map — rotate it or press ▶ Play, then press Stop & save.'); }
+});
+$('#cBtn').onclick = guard(async () => {
+  const prompts = $('#cPrompts').value.split('\n').map(s => s.trim()).filter(Boolean);
+  $('#cBtn').disabled = true; status(`Running ${prompts.length * 2} generations for the contrast… this can take a few minutes.`, false, true);
+  try {
+    const r = await api('/api/contrast', { method: 'POST', body: { name: $('#cName').value.trim(), prompts, system_a: $('#cA').value, system_b: $('#cB').value, max_new_tokens: +$('#cLen').value } });
+    S.headDiff = { name: r.name, heads: r.heads }; S.vectors = await api('/api/vectors'); S.vec = r.name; renderVectors();
+    const box = $('#cSamples'); box.textContent = ''; box.append(el('h2', { textContent: 'What the model said' }));
+    for (const s of r.samples) { box.append(el('div', { className: 'hint', textContent: s.prompt }), el('div', { className: 'answer' }, el('small', { textContent: 'A' }), s.a), el('div', { className: 'answer', style: 'margin-bottom:10px' }, el('small', { textContent: 'B' }), s.b)); addRunOption({ id: s.a_id, label: `[${r.name}:A] ${s.prompt}` }); addRunOption({ id: s.b_id, label: `[${r.name}:B] ${s.prompt}` }); }
+    status('Contrast ready — showing its neuron map.'); stopPlay(); setMode('diff');
+  } finally { $('#cBtn').disabled = false; }
+});
+
+/* ---------- boot ---------- */
+(guard(async () => {
+  S.info = await api('/api/info'); S.edits = S.info.edits; S.vectors = S.info.vectors;
+  $('#meta').textContent = `${S.info.model} · ${S.info.n_layers} layers · ${(S.info.n_layers * S.info.d_mlp).toLocaleString()} MLP neurons · running on ${S.info.device}`;
+  buildNet();
+  try {
+    const { createMap3D } = await import('/static/map3d.js?v=4'); // bump when map3d.js changes so browsers do not use a stale copy
+    S.map3d = createMap3D($('#map3d'), S.info, {
+      onPick: p => select(p),
+      onLayer: l => openZoom(l),
+      onWord: i => { if (S.run && i < S.run.tokens.length) setScope(String(i)); },
+      onHover: (p, e) => { if (!p) return tip(); const v = p.kind === 'neuron' && S.map ? ` · ${fmt(S.map[p.layer * S.info.d_mlp + p.index])}` : ''; tip(e, `L${p.layer} ${p.kind} ${p.index}${v}`); },
+    });
+  } catch (e) { console.error(e); S.view = 'grid'; setView('grid'); status('3D map could not start (' + e.message + ') — showing the grid instead.', true); }
+  S.presets = S.info.presets; S.lookup = S.info.lookup; $('#suitePrompts').value = S.info.suite.join('\n');
+  drawNet(); renderEdits(); renderVectors(); renderPresets(); S.info.runs.forEach(r => addRunOption(r));
+}))();
+</script>
+</body>
+</html>

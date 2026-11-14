@@ -1,0 +1,226 @@
+# Passages used by "What does this neuron do?". One passage per line; lines starting with # are ignored.
+# Add your own lines (any language, any style) and press "Rebuild lookup" in the app. Each line is cut to 64 tokens.
+# --- everyday facts
+The capital of France is Paris, and the capital of Japan is Tokyo.
+Water boils at 100 degrees Celsius at sea level and freezes at zero.
+The Great Wall of China stretches for thousands of kilometres across northern China.
+Mount Everest is the highest mountain on Earth, rising 8,849 metres above sea level.
+The Amazon rainforest produces a large share of the world's oxygen and is home to millions of species.
+William Shakespeare wrote Hamlet, Macbeth and Romeo and Juliet in the late sixteenth century.
+The human heart beats about one hundred thousand times every day.
+Honey never spoils; archaeologists have found edible honey in ancient Egyptian tombs.
+The Pacific Ocean is the largest and deepest of the world's oceans.
+Albert Einstein published the theory of general relativity in 1915.
+The Moon orbits the Earth roughly once every twenty-seven days.
+Canada, Mexico and the United States share the continent of North America.
+The Nile flows north through Egypt and empties into the Mediterranean Sea.
+Leonardo da Vinci painted the Mona Lisa, which hangs in the Louvre in Paris.
+Octopuses have three hearts and blue blood.
+# --- science and technology
+Photosynthesis converts sunlight, water and carbon dioxide into glucose and oxygen.
+DNA is a double helix made of four bases: adenine, thymine, guanine and cytosine.
+A neural network learns by adjusting its weights to reduce the error on training examples.
+Electrons orbit the nucleus of an atom, which contains protons and neutrons.
+Vaccines train the immune system to recognise a virus before a real infection happens.
+The speed of light in a vacuum is about 299,792 kilometres per second.
+Black holes form when massive stars collapse under their own gravity.
+Antibiotics kill bacteria but have no effect on viruses such as the common cold.
+A refrigerator moves heat from its inside to the outside using a compressed refrigerant.
+Plate tectonics explains earthquakes, volcanoes and the slow drift of continents.
+The mitochondria is often called the powerhouse of the cell.
+Quantum computers use qubits, which can be in a superposition of zero and one.
+Lithium-ion batteries store energy by moving lithium ions between two electrodes.
+Evolution by natural selection favours traits that help organisms survive and reproduce.
+The GPU ran out of memory, so we reduced the batch size and enabled mixed precision.
+# --- maths and numbers
+Two plus two equals four, and seven times eight equals fifty-six.
+The square root of 144 is 12, and 12 squared is 144.
+A prime number is divisible only by one and itself: 2, 3, 5, 7, 11, 13, 17.
+The area of a circle is pi times the radius squared.
+If x + 5 = 12 then x = 7.
+The sequence continues 1, 2, 4, 8, 16, 32, 64, 128, 256.
+One third is approximately 0.333 and two thirds is approximately 0.667.
+The invoice total was $1,249.99 including 8.5% sales tax.
+In 1969 humans first landed on the Moon; in 1989 the Berlin Wall fell.
+The probability of rolling two sixes with two dice is one in thirty-six.
+Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday.
+January, February, March, April, May, June, July, August, September.
+The meeting is at 3:30 pm on the 14th of October, 2025.
+# --- code
+def fibonacci(n): return n if n < 2 else fibonacci(n - 1) + fibonacci(n - 2)
+for i in range(10): print(i * i)
+SELECT name, email FROM users WHERE created_at > '2024-01-01' ORDER BY name;
+const total = items.reduce((sum, item) => sum + item.price, 0);
+import numpy as np; x = np.zeros((3, 4)); print(x.shape)
+if (user == null) { throw new IllegalArgumentException("user must not be null"); }
+<div class="container"><h1>Welcome</h1><p>Hello, world!</p></div>
+git commit -m "Fix off-by-one error in pagination" && git push origin main
+try: value = int(text) except ValueError: value = 0
+{"name": "Alice", "age": 30, "languages": ["English", "Spanish"]}
+Traceback (most recent call last): File "main.py", line 12, in <module> KeyError: 'id'
+# --- playful and enthusiastic
+Oh wow, that is absolutely fantastic news — I am so excited for you!
+Woohoo! We did it! High five, team, this calls for cake and confetti!
+Guess what? I just taught my dog to skateboard and honestly he's better at it than me.
+Yay, pizza night! Extra cheese, extra laughs, zero regrets.
+That is hilarious, I can't stop giggling — tell me another one!
+Let's gooo! Today is going to be the best day ever, I can feel it!
+Haha, you silly goose, of course penguins can't fly, but they sure can waddle with style.
+Hooray for weekends, sunshine, ice cream and absolutely no alarm clocks!
+# --- formal and clinical
+Pursuant to section 4.2 of the agreement, the tenant shall provide thirty days' written notice.
+The committee has reviewed the proposal and regrets to inform you that it was not approved.
+Please find attached the quarterly financial report for your review and consideration.
+The patient presented with acute chest pain and shortness of breath; an ECG was ordered.
+We hereby acknowledge receipt of your application dated the third of March.
+The defendant pleaded not guilty and the trial was adjourned until further notice.
+In accordance with company policy, all expenses must be submitted within fourteen days.
+The results were statistically significant (p < 0.05) across all three experimental conditions.
+Dear Sir or Madam, I am writing to formally request an extension of the deadline.
+# --- sad, angry, afraid, tender
+I miss her so much; the house feels empty and silent without her laughter.
+He sat alone at the funeral, tears running down his face, unable to speak.
+I am furious — this is the third time you have lied to me and I have had enough!
+How dare you speak to me like that? Get out of my office right now!
+Her hands trembled as footsteps echoed in the dark hallway behind her.
+I'm terrified of the exam tomorrow; my stomach is in knots and I can't sleep.
+I love you more than words can say, and I always will.
+Thank you so much for your kindness; it meant the world to me.
+I'm so sorry for what I said. I was wrong, and I hope you can forgive me.
+It's okay to feel overwhelmed. Take a deep breath; you are not alone in this.
+She smiled softly and tucked the blanket around the sleeping child.
+Ugh, I'm so bored. Nothing ever happens in this tiny, miserable town.
+# --- characters and styles
+Arrr, hoist the sails, ye scurvy dogs, there be treasure on yonder island!
+Verily, good sir, thou art most welcome in mine humble abode.
+Yo, that new track is fire, no cap, it's been on repeat all day.
+Greetings, human. I am a robot. Beep boop. Processing your request.
+Howdy partner, saddle up, we're ridin' out to the canyon at sunrise.
+Once upon a time, in a kingdom far away, there lived a dragon who was afraid of fire.
+It was a dark and stormy night; the rain fell in torrents and the wind howled.
+Elementary, my dear Watson: the mud on his boots tells us he came from the north.
+May the Force be with you, young apprentice; the galaxy is counting on us.
+Breaking news: a major storm is expected to make landfall on the coast this evening.
+Ladies and gentlemen, please welcome to the stage our next performer!
+LOL omg u wont believe what just happened 😂😂 call me asap!!!
+# --- poetry and description
+The rose is red, the violet blue, the honey sweet, and so are you.
+Soft rain taps the window while the grey city slowly wakes.
+Golden leaves drift down and gather quietly along the garden wall.
+The waves crashed against the rocks, sending white spray high into the salty air.
+Snow covered the silent village, and smoke curled from every chimney.
+The old library smelled of dust, leather and a hundred years of whispered secrets.
+A thin crescent moon hung above the desert, and the sand glowed silver.
+The market was a riot of colour: red peppers, yellow lemons, purple aubergines, green herbs.
+Thunder rolled across the valley and the first heavy drops began to fall.
+# --- conversation and questions
+What time does the train to Manchester leave, and which platform is it on?
+Could you please pass the salt? Thanks, and the pepper too, if you don't mind.
+Why is the sky blue during the day but red at sunset?
+"Are you coming to the party?" she asked. "I can't," he replied, "I have to work."
+How do I reset my password if I no longer have access to my email?
+Do you prefer coffee or tea in the morning?
+Who was the first person to walk on the Moon?
+Hi! How are you doing today? I hope you had a lovely weekend.
+No, I don't think that's a good idea. Actually, wait — maybe it is.
+Sorry, I can't help with that request, but I can suggest an alternative.
+As an AI assistant, I don't have feelings, but I'm happy to help you with that.
+Sure! Here is a step-by-step guide to get you started.
+Yes, of course. No, never. Maybe later. I don't know.
+My name is Sam, I'm twenty-nine, and I love sailing and playing the guitar.
+# --- instructions and lists
+First, preheat the oven to 180 degrees. Next, mix the flour, sugar and eggs. Finally, bake for 25 minutes.
+To make tea, boil the water, add a tea bag to the cup, pour, and wait three minutes.
+Shopping list: milk, eggs, bread, butter, apples, bananas, rice and olive oil.
+Step 1: unplug the router. Step 2: wait ten seconds. Step 3: plug it back in.
+Warning: do not operate this machine without safety goggles and gloves.
+Turn left at the traffic lights, go straight for two blocks, and the bank is on your right.
+Remember to drink water, stretch every hour, and get at least seven hours of sleep.
+Ingredients: two cups of flour, one teaspoon of salt, three eggs, a pinch of cinnamon.
+# --- people, places, culture
+Barack Obama served as the 44th President of the United States from 2009 to 2017.
+The Beatles were formed in Liverpool and became the best-selling band in history.
+Tokyo, Delhi, Shanghai, São Paulo and Mexico City are among the largest cities in the world.
+Marie Curie won Nobel Prizes in both physics and chemistry.
+Lionel Messi scored twice as Argentina won the World Cup final on penalties.
+The Olympic Games are held every four years in a different host city.
+Christmas, Diwali, Eid, Hanukkah and Lunar New Year are celebrated by millions of people.
+Harry Potter received a letter inviting him to Hogwarts School of Witchcraft and Wizardry.
+Apple, Google, Microsoft and Amazon are among the most valuable companies in the world.
+Beethoven composed nine symphonies, the last of them after he had lost his hearing.
+The doctor, the nurse, the teacher, the engineer and the farmer all arrived early.
+My mother, father, sister and two brothers are visiting my grandparents this summer.
+# --- food, animals, body, home
+She ordered spaghetti with tomato sauce, a green salad and a glass of red wine.
+The cat sat on the windowsill watching the birds, its tail twitching.
+Dogs, cats, horses, cows, sheep and chickens are common domestic animals.
+Fresh strawberries, blueberries and raspberries taste best in early summer.
+He broke his left arm, sprained his ankle and bruised two ribs in the fall.
+The kitchen has a fridge, an oven, a dishwasher and a small wooden table.
+A lion roared, an elephant trumpeted, and the monkeys chattered in the trees.
+Dark chocolate, roasted coffee and warm cinnamon buns filled the bakery with a wonderful smell.
+She wore a red coat, black boots, a woollen scarf and leather gloves.
+# --- money, work, politics, law
+The central bank raised interest rates by half a percentage point to fight inflation.
+The company reported record profits, and its share price jumped twelve percent.
+Parliament voted to pass the new climate bill after a long and heated debate.
+She negotiated a higher salary and four extra days of annual leave.
+The startup raised ten million dollars from investors in its first funding round.
+Voters go to the polls on Tuesday to elect a new president and members of congress.
+The contract was terminated because the supplier failed to deliver on time.
+Rent, groceries, electricity and transport take up most of my monthly budget.
+# --- negation, contrast, logic
+It is not true that all birds can fly; penguins and ostriches cannot.
+Although it was raining, they decided to go for a walk anyway.
+The opposite of hot is cold, the opposite of up is down, and the opposite of fast is slow.
+If it rains tomorrow, the picnic will be cancelled; otherwise we will meet at noon.
+She is taller than her brother but shorter than her father.
+Neither the red key nor the blue key opened the door; only the green one did.
+All mammals are warm-blooded. Whales are mammals. Therefore whales are warm-blooded.
+He said he would come, however he never showed up.
+The glass is either half full or half empty, depending on how you look at it.
+Before you leave, turn off the lights; after you arrive, send me a message.
+# --- other languages
+Bonjour, comment allez-vous aujourd'hui ? Je voudrais un café, s'il vous plaît.
+Hola, ¿cómo estás? Me llamo María y vivo en Madrid con mi familia.
+Guten Morgen! Ich möchte ein Brot und zwei Brötchen kaufen, bitte.
+今天天气很好，我们一起去公园散步吧。
+北京是中国的首都，上海是中国最大的城市。
+こんにちは、元気ですか？今日は東京でラーメンを食べました。
+Ciao, come stai? Domani andiamo al mare con gli amici.
+Привет! Как дела? Сегодня очень холодно, идёт снег.
+안녕하세요, 저는 학생입니다. 한국 음식을 좋아해요.
+مرحبا، كيف حالك اليوم؟ أتمنى لك يوما سعيدا.
+Olá, tudo bem? Eu gosto muito de futebol e de música brasileira.
+Translate into French: "The book is on the table." — "Le livre est sur la table."
+# --- chat format, tools, reasoning
+<|im_start|>user\nWhat is your name?<|im_end|>\n<|im_start|>assistant\nI'm Qwen, an AI assistant made by Alibaba Cloud.<|im_end|>
+<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\nTell me a joke.<|im_end|>
+<tool_call>\n<function=get_weather>\n<parameter=city>\nLondon\n</parameter>\n</function>\n</tool_call>
+<think>\nThe user is asking for the sum of 17 and 25. 17 + 25 = 42. I should answer briefly.\n</think>\n\nThe answer is 42.
+Let me think step by step. First, I need to find the total. Then I divide by the number of people.
+I'm not sure about that; I might be wrong, so please double-check with a reliable source.
+I cannot help with that, because it could cause harm to other people.
+Here are three options: 1. take the bus, 2. ride a bike, 3. walk.
+In summary, the main points are cost, speed and reliability.
+# --- more variety
+The spaceship drifted silently past Saturn's rings toward the outer planets.
+The knight drew his sword and charged at the dragon guarding the castle gate.
+She opened the email, read the first line, and immediately closed her laptop.
+The detective examined the broken window, the muddy footprints and the missing necklace.
+Rain or shine, the marathon starts at seven o'clock sharp on Sunday morning.
+The baby laughed, clapped her tiny hands and reached for the bright red balloon.
+He whispered the password, and the heavy stone door slowly creaked open.
+Traffic was terrible, the bus was late, and I spilled coffee on my shirt — what a morning.
+The orchestra fell silent, the conductor raised her baton, and the music began.
+Scientists warn that sea levels will rise as glaciers and ice sheets continue to melt.
+The teacher wrote the homework on the board and asked the class to copy it down.
+We hiked for six hours, pitched the tent by the lake and cooked dinner over a fire.
+The film was boring, the popcorn was stale, and the seats were uncomfortable.
+Congratulations on your graduation! We are all incredibly proud of you.
+Happy birthday! I hope your day is filled with love, laughter and lots of cake.
+Good night, sleep tight, and sweet dreams until the morning light.
+North, south, east and west; spring, summer, autumn and winter.
+Red, orange, yellow, green, blue, indigo and violet are the colours of the rainbow.
+The quick brown fox jumps over the lazy dog.
+To be, or not to be, that is the question.
